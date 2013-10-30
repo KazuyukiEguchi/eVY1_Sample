@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <link rel="import" href="components/controls.html" >
+        <title>eVY1 ShieldをMacにUSB接続して、Web MIDI API経由で唄ってもらう</title>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.0/jquery.min.js"></script>
+        <script src="http://cdnjs.cloudflare.com/ajax/libs/polymer/0.0.20130816/polymer.min.js"></script>
+        <script>
+            $(document).ready(function()
+            {
+                var MIDI;
+        
+                var outputs;
+                var outPort = 0;
+    
+                navigator.requestMIDIAccess({sysex:true}).then( successCallback, errorCallback );
+        
+                function successCallback(access)
+                {
+                    MIDI = access;
+            
+                    console.log("success");
+            
+                    outputs = MIDI.outputs();
+                    console.log(outputs);
+
+                    var mosel=document.getElementById("midiOutSel");
+            
+                    for (var i = 0 ; i < outputs.length ; i++)
+                    {
+                        console.log(outputs[i]["manufacturer"] + " " + outputs[i]["name"]);
+                        mosel.options[i]=new Option(outputs[i]["manufacturer"] + " " + outputs[i]["name"], i);
+                    }   
+                }
+    
+                function errorCallback(error)
+                {
+                    console.log("error " + error);
+                }
+                
+                $("#key").on('change', function(e)
+                {
+                    // console.log(e.originalEvent);
+                    
+                    if(e.originalEvent.note[0])
+                    {
+                        console.log("Note-On:"+e.originalEvent.note[1]);
+                        outputs[0].send([0x90, 0x3c + e.originalEvent.note[1] , 0x7f]);
+                    }    
+                    else
+                    {
+                        console.log("Note-Off:"+e.originalEvent.note[1]);
+                        outputs[0].send([0x80, 0x3c + e.originalEvent.note[1] , 0x00]);
+                    }
+                });
+                
+                $("#btn01").click(function()
+                {
+                    console.log("click btn01");
+                    
+                    outputs[0].send([0xf0,0x43,0x79,0x09,0x00,0x50,0x10,
+                                     0x6b,0x20,0x61,0x2c,　// か
+                                     0x65,0x2c,            // え
+                                     0x34,0x20,0x4d,0x2c,   // る
+                                     0x6e,0x20,0x6f,0x2c,   // の
+                                     0x4d,0x2c, // う
+                                     0x74,0x20,0x61,0x2c, // た
+                                     0x67,0x20,0x61, // が
+                                     0x00,0xf7]);
+                });
+
+                $("#btn02").click(function()
+                {
+                    console.log("click btn02");
+                    
+                    outputs[0].send([0xf0,0x43,0x79,0x09,0x00,0x50,0x10,
+                                     0x6b,0x27,0x20,0x69,0x2c,　// き
+                                     0x6b,0x20,0x61,0x2c,  // こ
+                                     0x65,0x2c,   // え
+                                     0x74,0x20,0x65,0x2c,   // て
+                                     0x6b,0x20,0x4d,0x2c, // く
+                                     0x34,0x20,0x4d,0x2c, // る
+                                     0x6a,0x20,0x6f, // よ
+                                     0x00,0xf7]);
+                });
+            });
+        </script>
+    </head>
+    <body>
+        <div id="mes">YAMAHA NSX-1搭載の<a href="http://www.switch-science.com/catalog/1489/">eVY1 Shield</a>をMacにUSB接続して、Web MIDI API経由で唄ってもらう</div>
+        <select id="midiOutSel" type="text" onchange="onOutChange();"></select><br/>
+        <button id="btn01">音声データ送信（かえるのうたが）</button>
+        <button id="btn02">音声データ送信（きこえてくるよ）</button>
+        <webaudio-keyboard keys="25" id="key"></webaudio-keyboard>
+    </body>
+</html>
